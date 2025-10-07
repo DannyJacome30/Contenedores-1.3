@@ -1,0 +1,17 @@
+# Ignorar directorios de construcción
+target/
+*.iml
+*.idea/
+*.vscode/
+
+# Ignorar archivos de configuración local de Maven
+**/.mvn/
+**/target/
+.mvn/
+
+# Archivos de configuración local de OS
+.DS_Store
+Thumbs.db
+
+# Archivos temporales o de logs
+*.log
