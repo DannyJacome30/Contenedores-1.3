@@ -2,72 +2,76 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: demo-db
-type: servicebinding.io/postgresql
+  nname: petclinic-db-secret
+  namespace: petclinic
+type: Opaque
 stringData:
-  type: "postgresql"
-  provider: "postgresql"
-  host: "demo-db"
+  username: admin
+  password: admin123
+  database: petclinic
+  host: petclinic-db
   port: "5432"
-  database: "petclinic"
-  username: "user"
-  password: "pass"
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: demo-db
+  name: petclinic-db
+  namespace: petclinic
 spec:
   ports:
     - port: 5432
+      targetPort: 5432
   selector:
-    app: demo-db
+    app: petclinic-db
+  type: ClusterIP
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-db
+  name: petclinic-db
+  namespace: petclinic
   labels:
-    app: demo-db
+    app: petclinic-db
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: demo-db
+      app: petclinic-db
   template:
     metadata:
       labels:
-        app: demo-db
+        app: petclinic-db
     spec:
       containers:
-        - image: postgres:17.5
-          name: postgresql
+        - name: postgres
+          image: postgres:16
           env:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: demo-db
+                  name: petclinic-db-secret
                   key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: demo-db
+                  name: petclinic-db-secret
                   key: password
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: demo-db
+                  name: petclinic-db-secret
                   key: database
           ports:
             - containerPort: 5432
-              name: postgresql
           livenessProbe:
             tcpSocket:
-              port: postgresql
+              port: 5432
+            initialDelaySeconds: 20
+            periodSeconds: 10
           readinessProbe:
             tcpSocket:
-              port: postgresql
-          startupProbe:
-            tcpSocket:
-              port: postgresql
+              port: 5432
+            initialDelaySeconds: 10
+            periodSeconds: 5

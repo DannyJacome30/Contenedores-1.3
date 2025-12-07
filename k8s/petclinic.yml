@@ -3,11 +3,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: petclinic
+  namespace: petclinic
 spec:
   type: NodePort
   ports:
     - port: 80
       targetPort: 8080
+      nodePort: 30080
   selector:
     app: petclinic
 
@@ -16,6 +18,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: petclinic
+  namespace: petclinic
   labels:
     app: petclinic
 spec:
@@ -29,36 +32,43 @@ spec:
         app: petclinic
     spec:
       containers:
-        - name: workload
-          image: dsyer/petclinic
+        - name: petclinic
+          # 👇 Cambia esta línea cuando tengas tu propia imagen
+          image: docker.io/tuusuario/petclinic:latest
+
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
-            - name: SERVICE_BINDING_ROOT
-              value: /bindings
-            - name: SPRING_APPLICATION_JSON
-              value: |
-                {
-                  "management.endpoint.health.probes.add-additional-paths": true
-                }
+
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://petclinic-db:5432/petclinic
+
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: petclinic-db-secret
+                  key: username
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: petclinic-db-secret
+                  key: password
+
           ports:
             - name: http
               containerPort: 8080
+
           livenessProbe:
             httpGet:
               path: /livez
               port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
           readinessProbe:
             httpGet:
               path: /readyz
               port: http
-          volumeMounts:
-            - mountPath: /bindings/secret
-              name: binding
-              readOnly: true
-      volumes:
-        - name: binding
-          projected:
-            sources:
-              - secret:
-                  name: demo-db
+            initialDelaySeconds: 10
+            periodSeconds: 5
