@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  nname: petclinic-db-secret
+  name: petclinic-db-secret
   namespace: petclinic
 type: Opaque
 stringData:
